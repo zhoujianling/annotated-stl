@@ -2,7 +2,7 @@
 
 这是一个仓库，里面放了一些我注释过的 STL。STL 来自 9.1.0 版 gcc 里面的 libstdc++。
 
-[TOC]
+
 
 ## STL内存管理
 
@@ -31,7 +31,7 @@
 
 所以一个 Allocator 的定义一般如下：
 
-![1561641296219](D:\User\zhouh\Documents\Project\Github\annotated-stl\assets\1561641296219.png)
+![1561641296219](https://jimmie00x0000.github.io/img/annotated-stl/1.png)
 
 其中，allocate() 负责分配空间，construct() 负责调用对象的构造函数，destroy() 负责调用对象的析构函数，deallocate() 负责释放已分配的空间。
 
@@ -49,7 +49,7 @@
 
 模板参数 _Alloc 就是 Allocator 的类型，其默认类型为定义在 <bits/allocator.h> 里的 allocator<T>。然而如果去看 allocator 的定义，发现其具体实现要追溯到其基类。
 
-![1561642558300](D:\User\zhouh\Documents\Project\Github\annotated-stl\assets\1561642558300.png)
+![1561642558300](https://jimmie00x0000.github.io/img/annotated-stl/2.png)
 
 
 
