@@ -85,7 +85,83 @@ new_allocator 使用 ::operator new 来分配空间，其底层就是最常用�
 
 ### pool_allocator
 
+pool_allocator 定义在 <ext/pool_allocator.h> 里，实际类名为 \_\_pool_alloc， 其继承于  __pool_alloc_base 。
+![A-3](https://jimmie00x0000.github.io/img/annotated-stl/3.png)
 
+pool_allocator 采用如下机制分配内存：
+
+1. 如果被全局强制要求用 new 分配，使用 :: operator new 为对象分配内存
+2. 如果要求分配的空间大小超过阈值 s_max，则直接用 :: operator new 分配内存
+3. 如果小于阈值 s_max，则通过数据结构 free_list（空闲链表）来分配内存
+
+
+
+注：如果了解 malloc 的底层实现机制，会发现这里的 free_list 和 malloc 的分配器实现并无太大区别。
+
+
+
+该分配器的 allocate() 实现如下：
+
+```c++
+  template<typename _Tp>
+    _Tp*
+    __pool_alloc<_Tp>::allocate(size_type __n, const void*)
+    {
+      pointer __ret = 0;
+      if (__builtin_expect(__n != 0, true))
+	{
+	  if (__n > this->max_size())
+	    std::__throw_bad_alloc();
+
+	  const size_t __bytes = __n * sizeof(_Tp);
+
+#if __cpp_aligned_new
+	  if (alignof(_Tp) > __STDCPP_DEFAULT_NEW_ALIGNMENT__)
+	    {
+	      std::align_val_t __al = std::align_val_t(alignof(_Tp));
+	      return static_cast<_Tp*>(::operator new(__bytes, __al));
+	    }
+#endif
+
+	  // If there is a race through here, assume answer from getenv
+	  // will resolve in same direction.  Inspired by techniques
+	  // to efficiently support threading found in basic_string.h.
+	  if (_S_force_new == 0)
+	    {
+	      if (std::getenv("GLIBCXX_FORCE_NEW"))
+		__atomic_add_dispatch(&_S_force_new, 1);
+	      else
+		__atomic_add_dispatch(&_S_force_new, -1);
+	    }
+		
+      // 如果要求分配的内存空间大于 s_max ，或者强制使用 new 分配
+	  if (__bytes > size_t(_S_max_bytes) || _S_force_new > 0)
+	    __ret = static_cast<_Tp*>(::operator new(__bytes));
+	  else
+      // 使用空闲链表进行分配
+	    {
+	      _Obj* volatile* __free_list = _M_get_free_list(__bytes);
+	      
+	      __scoped_lock sentry(_M_get_mutex());
+	      _Obj* __restrict__ __result = *__free_list;
+	      if (__builtin_expect(__result == 0, 0))
+		__ret = static_cast<_Tp*>(_M_refill(_M_round_up(__bytes)));
+	      else
+		{
+		  *__free_list = __result->_M_free_list_link;
+		  __ret = reinterpret_cast<_Tp*>(__result);
+		}
+	      if (__ret == 0)
+		std::__throw_bad_alloc();
+	    }
+	}
+      return __ret;
+    }
+```
+
+
+
+。
 
 ### bitmap_allocator
 
