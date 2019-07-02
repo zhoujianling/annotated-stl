@@ -170,11 +170,139 @@ pool_allocator 采用如下机制分配内存：
 ## 容器
 
 ### 变长数组 vector
+vector 是 STL 最常用的数据容器之一，用来顺序放置元素。其底层实现是一块连续空间，每次往分配的空间里放元素，如果刚好放满了，就对已分配空间扩容。
+
+在 x86-64 架构下，如果我们在代码中计算 sizeof(任意vector)，我们会发生计算出来的大小为 24。原因很简单，数组是在堆中分配的，vector对象本身只维护三个指针（见下图的 \_Vector_impl_data 的三个成员变量），分别指向已分配空间开始位置、当前元素放到哪儿了、已分配空间的结束位置。
+
+![1561641296219](https://jimmie00x0000.github.io/img/annotated-stl/5.png)
+
+vector 的实际的实现在 <bits/stl_vector.h> 中，其继承于 _Vector_base, 类图如下：
+
+![1561641296219](https://jimmie00x0000.github.io/img/annotated-stl/4.png)
+
+调用 push_back 向 vector 添加元素，如果 _M_finish 指针小于 _M_end_of_storage ，则可以继续愉快地插入数据，否则调用 _M_relloc_insert 实现扩容并插入：
+
+```c++
+#if __cplusplus >= 201103L
+  template<typename _Tp, typename _Alloc>
+    template<typename... _Args>
+      void
+      vector<_Tp, _Alloc>::
+      _M_realloc_insert(iterator __position, _Args&&... __args)
+#else
+  template<typename _Tp, typename _Alloc>
+    void
+    vector<_Tp, _Alloc>::
+    _M_realloc_insert(iterator __position, const _Tp& __x)
+#endif
+    {
+	// _M_check_len 一般情况下返回 size() * 2，即扩容后的大小
+      const size_type __len =
+	_M_check_len(size_type(1), "vector::_M_realloc_insert");
+	// 记录旧指针位置
+      pointer __old_start = this->_M_impl._M_start;
+      pointer __old_finish = this->_M_impl._M_finish;
+	// 之前放了多少个元素
+      const size_type __elems_before = __position - begin();
+	// 执行扩容
+      pointer __new_start(this->_M_allocate(__len));
+      pointer __new_finish(__new_start);
+      __try
+	{
+	  // The order of the three operations is dictated by the C++11
+	  // case, where the moves could alter a new element belonging
+	  // to the existing vector.  This is an issue only for callers
+	  // taking the element by lvalue ref (see last bullet of C++11
+	  // [res.on.arguments]).
+	  // 把要插入的新元素 移动/拷贝 到新存储分配的空间的对应位置上
+	  // 此时旧的空间上的元素还没有拷过来
+	  _Alloc_traits::construct(this->_M_impl,
+				   __new_start + __elems_before,
+#if __cplusplus >= 201103L
+				   std::forward<_Args>(__args)...);
+#else
+				   __x);
+#endif
+	  __new_finish = pointer();
+
+#if __cplusplus >= 201103L
+	  if _GLIBCXX17_CONSTEXPR (_S_use_relocate())
+	    {
+	      __new_finish = _S_relocate(__old_start, __position.base(),
+					 __new_start, _M_get_Tp_allocator());
+
+	      ++__new_finish;
+
+	      __new_finish = _S_relocate(__position.base(), __old_finish,
+					 __new_finish, _M_get_Tp_allocator());
+	    }
+	  else
+#endif
+	    {
+		// 因为新插入的元素可能在数组中的任何位置（insert也会导致扩容），所以分两次拷贝原空间里的数据
+		// 先拷贝 [_old_start, _position) 到 [_new_start, )，
+		// 再拷贝 [_position, _old_finish) 到 [_new_finish, ) 上去
+	      __new_finish
+		= std::__uninitialized_move_if_noexcept_a
+		(__old_start, __position.base(),
+		 __new_start, _M_get_Tp_allocator());
+
+	      ++__new_finish;
+
+		// __uninitialized_move_if_noexcept_a 在 <bits/stl_uninitialized> 中，
+	      __new_finish
+		= std::__uninitialized_move_if_noexcept_a
+		(__position.base(), __old_finish,
+		 __new_finish, _M_get_Tp_allocator());
+	    }
+	}
+      __catch(...)
+	{
+	  if (!__new_finish)
+	    _Alloc_traits::destroy(this->_M_impl,
+				   __new_start + __elems_before);
+	  else
+	    std::_Destroy(__new_start, __new_finish, _M_get_Tp_allocator());
+	  _M_deallocate(__new_start, __len);
+	  __throw_exception_again;
+	}
+#if __cplusplus >= 201103L
+      if _GLIBCXX17_CONSTEXPR (!_S_use_relocate())
+#endif
+	// 析构扩容前空间里的对象
+	std::_Destroy(__old_start, __old_finish, _M_get_Tp_allocator());
+      _GLIBCXX_ASAN_ANNOTATE_REINIT;
+	// 释放扩容前使用的空间
+      _M_deallocate(__old_start,
+		    this->_M_impl._M_end_of_storage - __old_start);
+	// 重新定位三个指针
+      this->_M_impl._M_start = __new_start;
+      this->_M_impl._M_finish = __new_finish;
+      this->_M_impl._M_end_of_storage = __new_start + __len;
+    }
+
+```
+
+更多的分析将在源码中给出。
+
+
+
+### map
+### unordered_map
+
+
 
 ## 算法
+
+### 排序 sort
+
+
 
 ## 参考文献
 
 * https://gcc.gnu.org/onlinedocs/libstdc++/manual/memory.html
+* https://sploitfun.wordpress.com/2015/02/10/understanding-glibc-malloc/
+* https://gcc.gnu.org/wiki/Visibility
+* https://blog.csdn.net/fengbingchun/article/details/78898623
 * 
 

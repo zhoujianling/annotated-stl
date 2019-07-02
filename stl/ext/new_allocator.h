@@ -111,6 +111,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	    return static_cast<_Tp*>(::operator new(__n * sizeof(_Tp), __al));
 	  }
 #endif
+      // 默认分配器使用全局 operator new
 	return static_cast<_Tp*>(::operator new(__n * sizeof(_Tp)));
       }
 
@@ -144,6 +145,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	construct(_Up* __p, _Args&&... __args)
 	noexcept(noexcept(::new((void *)__p)
 			    _Up(std::forward<_Args>(__args)...)))
+      // placement new, 将 args 右值移动到 __p 这个位置上来
 	{ ::new((void *)__p) _Up(std::forward<_Args>(__args)...); }
 
       template<typename _Up>
