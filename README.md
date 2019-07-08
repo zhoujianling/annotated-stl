@@ -285,6 +285,15 @@ vector 的实际的实现在 <bits/stl_vector.h> 中，其继承于 _Vector_base
 
 更多的分析将在源码中给出。
 
+### 双端队列 deque
+
+deque 相比于 vector，可以实现在常数时间内向头部插入数据（push_front）。因为数组的头部插入效率是 O(n)，此时再使用内存上的连续数组便无法满足这样的需求。deque 使用**分段连续空间**来存储数据，其数据结构如下图所示：
+
+
+
+在 x86-64架构下，如果我们计算 sizeof(deque>，会得到80字节的大小。原因见下面的类图，因为 _Deque_iterator 包含4个指针，大小为 4 * 8 = 32，一个 _Deque_impl 包含两个这样的迭代器，一个 size_t 类型的成员，和一个  _Tp ** 类型的指针，故大小为 32 * 2 + 8 + 8 = 80。类图如下：
+![1561642558300](https://jimmie00x0000.github.io/img/annotated-stl/6.png)
+
 
 
 ### map
