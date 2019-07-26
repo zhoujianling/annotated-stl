@@ -169,8 +169,13 @@ pool_allocator 采用如下机制分配内存：
 
 ## 容器
 
+### 字符串 string
+
+C++ 在标准库中提供了一个字符串类。
+
 ### 变长数组 vector
-vector 是 STL 最常用的数据容器之一，用来顺序放置元素。其底层实现是一块连续空间，每次往分配的空间里放元素，如果刚好放满了，就对已分配空间扩容。
+
+变长数组 vector 是 STL 最常用的数据容器之一，用来顺序放置元素。其底层实现是一块连续空间，每次往分配的空间里放元素，如果刚好放满了，就对已分配空间扩容。
 
 在 x86-64 架构下，如果我们在代码中计算 sizeof(任意vector)，我们会发生计算出来的大小为 24。原因很简单，数组是在堆中分配的，vector对象本身只维护三个指针（见下图的 \_Vector_impl_data 的三个成员变量），分别指向已分配空间开始位置、当前元素放到哪儿了、已分配空间的结束位置。
 
@@ -287,7 +292,7 @@ vector 的实际的实现在 <bits/stl_vector.h> 中，其继承于 _Vector_base
 
 ### 双端队列 deque
 
-deque 相比于 vector，可以实现在常数时间内向头部插入数据（push_front）。因为数组的头部插入效率是 O(n)，此时再使用内存上的连续数组便无法满足这样的需求。deque 使用**分段连续空间**来存储数据，其数据结构如下图所示：
+双端队列 deque 相比于 vector，可以实现在常数时间内向头部插入数据（push_front）。因为连续数组的头部插入效率是 O(n)，此时再使用内存上的连续数组便无法满足这样的需求。deque 使用**分段连续空间**来存储数据，其数据结构类似开散列的哈希表，如下图所示：
 
 
 
@@ -304,6 +309,99 @@ deque 相比于 vector，可以实现在常数时间内向头部插入数据（p
 ## 算法
 
 ### 排序 sort
+
+标准库提供的 sort 函数声明在 <bits/stl_algo.h> 里，传入一个顺序容器的首尾迭代器，可以对两个迭代器之间的数据进行排序，其时间复杂度为 O(n lgn)。该排序过程是不稳定的，即相同大小的待排元素在排序前后的相对顺序可能发生变化。
+
+sort 函数的真正实现在 <bits/stl_algo.h> 里的 __sort 函数里，其函数签名为：
+
+```c++
+  template<typename _RandomAccessIterator, typename _Compare>
+    inline void __sort(_RandomAccessIterator __first, _RandomAccessIterator __last, _Compare __comp);
+```
+
+该函数分两步实现排序过程：
+
+1. 使用 introsort 使数组达到近似有序的状态
+2. 使用插入排序完成最终的排序操作（插入排序对近似有序的数组的排序效率较高，近似 O(n) 复杂度）
+
+```c++
+// 内省排序
+std::__introsort_loop(__first, __last, std::__lg(__last - __first) * 2, __comp);
+// 插入排序
+std::__final_insertion_sort(__first, __last, __comp);
+```
+
+Introsort 类似快速排序，大体思路如下：
+
+1. 使用近似快速排序，一直排序到子数组长度小于 _S_threshold 
+2. 递归过深的时候，对子数组做堆排序
+
+```c++
+  // 类似快速排序，但是并不实现完整的快排，只需要大致有序（局部无序子结构大小 < 16）
+  template<typename _RandomAccessIterator, typename _Size, typename _Compare>
+    void
+    __introsort_loop(_RandomAccessIterator __first,
+		     _RandomAccessIterator __last,
+		     _Size __depth_limit, _Compare __comp)
+    {
+      // _S_threshold 默认为 16，递归到子数组长度小于16时退出递归
+      while (__last - __first > int(_S_threshold))
+	{
+    // 递归过深，但是仍然无法达到大致有序的状态时，使用堆排序
+	  if (__depth_limit == 0)
+	    {
+	      std::__partial_sort(__first, __last, __last, __comp);
+	      return;
+	    }
+	  --__depth_limit;
+    // __cut 为 pivot 分割点
+	  _RandomAccessIterator __cut =
+	    std::__unguarded_partition_pivot(__first, __last, __comp);
+    // 递归调用自身，对 __cut 到 __last 部分的数据进行 introsort
+	  std::__introsort_loop(__cut, __last, __depth_limit, __comp);
+    // 重设 __last 指针，在下一次 while 循环中对左半部分排序,减少递归次数
+	  __last = __cut;
+	}
+    }
+```
+
+快速排序中的 partition 如下：
+
+```c++
+  // 快速排序中的 Partition 操作的具体实现
+  template<typename _RandomAccessIterator, typename _Compare>
+    _RandomAccessIterator
+    __unguarded_partition(_RandomAccessIterator __first,
+			  _RandomAccessIterator __last,
+			  _RandomAccessIterator __pivot, _Compare __comp)
+    {
+     	// ... // 该过程和大多数快排实现类似
+    }
+
+  /// This is a helper function...
+  // 快速排序中的 partition 操作
+  template<typename _RandomAccessIterator, typename _Compare>
+    inline _RandomAccessIterator
+    __unguarded_partition_pivot(_RandomAccessIterator __first,
+				_RandomAccessIterator __last, _Compare __comp)
+    {
+      // 中间位置的迭代器
+      _RandomAccessIterator __mid = __first + (__last - __first) / 2;
+      // 对于处在 __first + 1, __mid, __last - 1 三个位置的元素，取第二大的元素为
+      // pivot_value，然后跟 __first 位置上的元素交换位置
+      std::__move_median_to_first(__first, __first + 1, __mid, __last - 1,
+				  __comp);
+      return std::__unguarded_partition(__first + 1, __last, __first, __comp);
+    }
+```
+
+
+
+
+
+### 洗牌 shuffle
+
+
 
 
 
