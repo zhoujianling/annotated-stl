@@ -4,11 +4,11 @@
 这是一个仓库，里面放了一些我注释过的 STL。STL 来自 9.1.0 版 gcc 里面的 libstdc++。
 
 内容目录：
-- [STL 内存管理](#memory_management)
-  - [关于 Allocator](#allocator)
+- [STL 内存管理](#stl内存管理)
+  - [关于Allocator](#关于allocator)
   - new_allocator
   - pool_allocator
-- [容器](#container)
+- [容器](#容器)
   - 字符串 string
   - 变长数组 vector
   - 双端队列 deque
