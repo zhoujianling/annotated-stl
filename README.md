@@ -171,7 +171,46 @@ pool_allocator 采用如下机制分配内存：
 
 ### 字符串 string
 
-C++ 在标准库中提供了一个字符串类。
+C++ 在标准库中提供了一个字符串类 string，该类是 basic_string\<char\> 的别名 。模板类 basic_string 定义在 <bits\basic_string.h> 中，该类的声明如下：
+
+```c++
+  template<typename _CharT, typename _Traits = char_traits<_CharT>,
+           typename _Alloc = allocator<_CharT> >
+    class basic_string;
+```
+
+
+
+该文件很大，有几千行，实际包含了两个 basic_string 的实现（见下方代码块），这两个 basic_string 的实现差异较大。对于前者，计算 sizeof(string) 的结果为 32，对于后者，计算 sizeof(string) 的结果为 8。可以通过把 _GLIBCXX_USE_CXX11_ABI 定义为 1 或者 0 来切换两者实现，观察效果。
+
+```c++
+#if _GLIBCXX_USE_CXX11_ABI
+	template<typename _CharT, typename _Traits = char_traits<_CharT>,
+           typename _Alloc = allocator<_CharT> > class basic_string {
+               // ... 
+               // 计算 sizeof(string) 结果为 32
+           };
+#else 
+	template<typename _CharT, typename _Traits = char_traits<_CharT>,
+           typename _Alloc = allocator<_CharT> > class basic_string {
+               // ...
+               // 引用计数版的实现
+               // 计算 sizeof(string) 结果为 8
+           };
+	
+```
+
+
+
+g++ 默认情况下是使用前者的。所以我只分析前者的实现。
+
+
+
+
+
+### 迭代器 iterator
+
+
 
 ### 变长数组 vector
 
@@ -411,5 +450,6 @@ Introsort 类似快速排序，大体思路如下：
 * https://sploitfun.wordpress.com/2015/02/10/understanding-glibc-malloc/
 * https://gcc.gnu.org/wiki/Visibility
 * https://blog.csdn.net/fengbingchun/article/details/78898623
+* http://feihu.me/blog/2014/sgi-std-sort/
 * 
 
