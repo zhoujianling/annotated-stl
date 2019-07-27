@@ -5,21 +5,20 @@
 
 内容目录：
 - [STL 内存管理](#stl内存管理)
-  - [关于Allocator](#关于allocator)
-  - new_allocator
-  - pool_allocator
+  - [关于 Allocator](#关于-allocator)
+  - [new_allocator](#new_allocator)
+  - [pool_allocator](#pool_allocator)
 - [容器](#容器)
-  - 字符串 string
-  - 变长数组 vector
-  - 双端队列 deque
-- 算法
-  - 排序 sort
-- 参考资料
+  - [字符串 string](#字符串-string)
+  - [变长数组 vector](#变长数组-vector)
+  - [双端队列 deque](#双端队列-deque)
+- [算法](#算法)
+  - [排序 sort](#排序-sort)
+- [参考资料](#参考文献)
   
 
 
-STL内存管理
----
+## STL内存管理
 
 
 
