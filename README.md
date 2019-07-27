@@ -4,22 +4,22 @@
 这是一个仓库，里面放了一些我注释过的 STL。STL 来自 9.1.0 版 gcc 里面的 libstdc++。
 
 内容目录：
-- [Annotated STL](#title)
-  - [STL 内存管理](#memory_management)
-    - 关于 Allocator
-    - new_allocator
-    - pool_allocator
-  - [容器](#container)
-    - 字符串 string
-    - 变长数组 vector
-    - 双端队列 deque
-  - 算法
-    - 排序 sort
-  - 参考资料
+- [STL 内存管理](#memory_management)
+  - [关于 Allocator](#allocator)
+  - new_allocator
+  - pool_allocator
+- [容器](#container)
+  - 字符串 string
+  - 变长数组 vector
+  - 双端队列 deque
+- 算法
+  - 排序 sort
+- 参考资料
   
 
 
-## STL内存管理
+STL内存管理
+---
 
 
 
