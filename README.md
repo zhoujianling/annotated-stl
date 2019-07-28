@@ -216,9 +216,77 @@ C++ 在标准库中提供了一个字符串类 string，该类是 basic_string\<
 
 
 
-g++ 默认情况下是使用前者的。所以我只分析前者的实现。
+2019 年的 g++ 默认情况下是使用前者的。所以我只分析前者的实现。
+
+basic_string 有 3 个成员变量，_M_dataplus 是一个保存数据指针 _M_p 的结构体，占据 8 个字节，\_M_string_length 表示当前字符串长度，占据 8 个字节，然后有个大小为 16 字节的联合体，存储 _M_allocated_capacity 和 _M_local_buf。类图如下：
 
 
+
+![string 类图](https://jimmie00x0000.github.io/img/annotated-stl/string.png)
+
+basic_string 的数据存储方式要分两种情况讨论：
+
+- 较短的字符串（不到16字节，比如 “abc" ）,保存在 _M_local_buf 里面，在栈上面
+- 较长的字符串（超过16字节，比如 "abcdeabcdeabcdeabcde"），保存在堆上
+
+可以通过如下代码测试数据保存的位置：
+
+```c++
+#include <string>
+#include <cstdio>
+
+using namespace std;
+
+int main() {
+    string s1("abcdeabcdeabcdeabc");
+    printf("0x%08x 0x%08x\n", &s1, s1.data());
+    string s2("abcdeabcdeabcde");
+    printf("0x%0x 0x%08x\n", &s2, s2.data());
+    return 0;
+}
+```
+
+我在自己机器上打印出来的结果为：
+
+```shell
+0xd145a6b0 0x01e27c20 # 存储在堆上
+0xd145a6d0 0xd145a6e0 # 存储在栈上
+```
+
+可以很明显地看到，对于长度超过 16 字节的字符串，其存储位置就在 basic_string 地址起点向后偏移 16 字节的位置，也就是存储在 _M_local_buf 里面。
+
+basic_string 支持通过 operator += 或者 append() 函数拼接字符串，其具体实现在 <bits/basic_string.tcc> 里面。我以 _M_append() 方法为例，说明一下拼接过程：
+
+```c++
+  // 向当前字符串的尾部拼接新的字符串，具体实现
+  // __s: 要拼接的 C 风格字符串
+  // __n: __s 的长度
+  template<typename _CharT, typename _Traits, typename _Alloc>
+    basic_string<_CharT, _Traits, _Alloc>&
+    basic_string<_CharT, _Traits, _Alloc>::
+    _M_append(const _CharT* __s, size_type __n)
+    {
+      // 新的字符串长度
+      const size_type __len = __n + this->size();
+
+      // 如果已分配的空间容量足够
+      if (__len <= this->capacity())
+	{
+    // 如果 __n 长度不为0，将 C 字符串拷贝到当前串的末尾
+	  if (__n)
+	    this->_S_copy(this->_M_data() + this->size(), __s, __n);
+	}
+    // 如果已分配的空间不足，先扩容再拷贝
+      else
+	this->_M_mutate(this->size(), size_type(0), __s, __n);
+
+      // 设置新的长度
+      this->_M_set_length(__len);
+      return *this;
+    }
+```
+
+basic_string 的复制行为。。。待续
 
 
 
@@ -346,6 +414,10 @@ vector 的实际的实现在 <bits/stl_vector.h> 中，其继承于 _Vector_base
 ### 双端队列 deque
 
 双端队列 deque 相比于 vector，可以实现在常数时间内向头部插入数据（push_front）。因为连续数组的头部插入效率是 O(n)，此时再使用内存上的连续数组便无法满足这样的需求。deque 使用**分段连续空间**来存储数据，其数据结构类似开散列的哈希表，如下图所示：
+
+
+
+// 图在制作中，待续。。。
 
 
 
