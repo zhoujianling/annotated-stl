@@ -1938,7 +1938,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 		     _RandomAccessIterator __last,
 		     _Size __depth_limit, _Compare __comp)
     {
-      // _S_threshold 默认为 16，即
+      // _S_threshold 默认为 16，递归到子数组长度小于16时退出递归
       while (__last - __first > int(_S_threshold))
 	{
     // 递归过深，但是仍然无法达到大致有序的状态时，使用堆排序

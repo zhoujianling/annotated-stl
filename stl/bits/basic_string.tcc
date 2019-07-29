@@ -305,6 +305,11 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	}
     }
 
+  // 分配空间不足的时候，执行扩容
+  // __pos: 当前字符串长度
+  // __len1: 0?
+  // __s: 新加到尾部的字符串
+  // __len2: __s 的长度
   template<typename _CharT, typename _Traits, typename _Alloc>
     void
     basic_string<_CharT, _Traits, _Alloc>::
@@ -313,6 +318,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     {
       const size_type __how_much = length() - __pos - __len1;
 
+      // 新的容量仅够放新的字符串，不多余分配
       size_type __new_capacity = length() + __len2 - __len1;
       pointer __r = _M_create(__new_capacity, capacity());
 
@@ -325,6 +331,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 		      _M_data() + __pos + __len1, __how_much);
 
       _M_dispose();
+      // 设置新的数据指针和容量
       _M_data(__r);
       _M_capacity(__new_capacity);
     }
@@ -354,21 +361,29 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	this->_M_set_length(__n);
     }
 
+  // 向当前字符串的尾部拼接新的字符串，具体实现
+  // __s: 要拼接的 C 风格字符串
+  // __n: __s 的长度
   template<typename _CharT, typename _Traits, typename _Alloc>
     basic_string<_CharT, _Traits, _Alloc>&
     basic_string<_CharT, _Traits, _Alloc>::
     _M_append(const _CharT* __s, size_type __n)
     {
+      // 新的字符串长度
       const size_type __len = __n + this->size();
 
+      // 如果已分配的空间容量足够
       if (__len <= this->capacity())
 	{
+    // 如果 __n 长度不为0，将 C 字符串拷贝到当前串的末尾
 	  if (__n)
 	    this->_S_copy(this->_M_data() + this->size(), __s, __n);
 	}
+    // 如果已分配的空间不足，先扩容再拷贝
       else
 	this->_M_mutate(this->size(), size_type(0), __s, __n);
 
+      // 设置新的长度
       this->_M_set_length(__len);
       return *this;
     }

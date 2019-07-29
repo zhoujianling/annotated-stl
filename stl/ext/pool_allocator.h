@@ -53,6 +53,7 @@
 #include <type_traits>
 #endif
 
+// 使用 GNU C 扩展语法控制共享库中符号的可见性
 namespace __gnu_cxx _GLIBCXX_VISIBILITY(default)
 {
 _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -89,6 +90,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	char        _M_client_data[1];    // The client sees this.
       };
       
+      // 一共 _S_free_list_size 个链表结点
       static _Obj* volatile         _S_free_list[_S_free_list_size];
 
       // Chunk allocation state.
@@ -110,7 +112,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       // free list.
       void*
       _M_refill(size_t __n);
-      
+
+      // 成员
       // Allocates a chunk for nobjs of size size.  nobjs may be reduced
       // if it is inconvenient to allocate the requested number.
       char*
@@ -164,6 +167,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       address(const_reference __x) const _GLIBCXX_NOEXCEPT
       { return std::__addressof(__x); }
 
+      // -1 
       size_type
       max_size() const _GLIBCXX_USE_NOEXCEPT 
       { return size_t(-1) / sizeof(_Tp); }
@@ -219,6 +223,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	  if (__n > this->max_size())
 	    std::__throw_bad_alloc();
 
+    // 计算要分配的空间大小
 	  const size_t __bytes = __n * sizeof(_Tp);
 
 #if __cpp_aligned_new

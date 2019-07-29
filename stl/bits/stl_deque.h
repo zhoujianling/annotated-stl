@@ -1554,6 +1554,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 #endif
 
       /**
+       *  向队列尾部添加元素
        *  @brief  Add data to the end of the %deque.
        *  @param  __x  Data to be added.
        *
@@ -1565,14 +1566,18 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       void
       push_back(const value_type& __x)
       {
+      // 如果_M_finish 指向的缓冲区剩下的空间足够
 	if (this->_M_impl._M_finish._M_cur
 	    != this->_M_impl._M_finish._M_last - 1)
 	  {
+          // 把 __x 复制到 _M_finish._M_cur 指向的位置
 	    _Alloc_traits::construct(this->_M_impl,
 				     this->_M_impl._M_finish._M_cur, __x);
+          // 指针自增
 	    ++this->_M_impl._M_finish._M_cur;
 	  }
 	else
+        // 
 	  _M_push_back_aux(__x);
       }
 

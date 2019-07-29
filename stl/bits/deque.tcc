@@ -487,12 +487,14 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	if (size() == max_size())
 	  __throw_length_error(
 	      __N("cannot create std::deque larger than max_size()"));
-
+	// 通过可能的 map 扩容来确保 map 有足够的空间能容纳更多指向缓冲块的指针？
 	_M_reserve_map_at_back();
+	// 申请新的缓冲块并移动 node 指针?
 	*(this->_M_impl._M_finish._M_node + 1) = this->_M_allocate_node();
 	__try
 	  {
 #if __cplusplus >= 201103L
+	// 拷贝或转发 要插入的新元素到 _M_finish._M_cur 指向的位置
 	    _Alloc_traits::construct(this->_M_impl,
 	                             this->_M_impl._M_finish._M_cur,
 			             std::forward<_Args>(__args)...);
@@ -501,6 +503,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 #endif
 	    this->_M_impl._M_finish._M_set_node(this->_M_impl._M_finish._M_node
 						+ 1);
+		// 
 	    this->_M_impl._M_finish._M_cur = this->_M_impl._M_finish._M_first;
 	  }
 	__catch(...)
