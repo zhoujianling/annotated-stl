@@ -1,7 +1,9 @@
 
 # Annotated STL
 
-这是一个仓库，里面放了一些我注释过的 STL。STL 来自 9.1.0 版 gcc 里面的 libstdc++。
+这是一个仓库，里面放了一些我注释过的 STL源码。STL 来自 9.1.0 版 gcc 里面的 libstdc++。
+
+2019 年的 STL 的具体实现跟《STL 源码剖析》所介绍的已经有一些差异了，所以，开此仓库。
 
 内容目录：
 - [STL 内存管理](#stl内存管理)
@@ -12,6 +14,7 @@
   - [字符串 string](#字符串-string)
   - [变长数组 vector](#变长数组-vector)
   - [双端队列 deque](#双端队列-deque)
+  - [哈希映射 unordered_map](#unordered_map)
 - [算法](#算法)
   - [排序 sort](#排序-sort)
 - [参考资料](#参考文献)
@@ -286,11 +289,13 @@ basic_string 支持通过 operator += 或者 append() 函数拼接字符串，�
     }
 ```
 
-basic_string 的复制行为。。。待续
+
+
+basic_string 的拷贝复制会简单地执行深拷贝，而非采用写时复制、引用计数等技术。更详细的分析会在源码注释中给出。
 
 
 
-### 迭代器 iterator
+
 
 
 
@@ -415,9 +420,9 @@ vector 的实际的实现在 <bits/stl_vector.h> 中，其继承于 _Vector_base
 
 双端队列 deque 相比于 vector，可以实现在常数时间内向头部插入数据（push_front）。因为连续数组的头部插入效率是 O(n)，此时再使用内存上的连续数组便无法满足这样的需求。deque 使用**分段连续空间**来存储数据，其数据结构类似开散列的哈希表，如下图所示：
 
+![1561642558300](https://jimmie00x0000.github.io/img/annotated-stl/deque_structure.png)
 
-
-// 图在制作中，待续。。。
+简单来说，deque 的数据分段存储在多个子数组上，通过对数据分段，每次向头部插入数据的时候，只需要移动 \_M_cur 指针然后插入数据即可。即使队首所在的数组可用空间不够，也可以通过新申请一个子数组来实现。
 
 
 
@@ -428,6 +433,25 @@ vector 的实际的实现在 <bits/stl_vector.h> 中，其继承于 _Vector_base
 
 ### map
 ### unordered_map
+
+unordered_map 也是常用的 STL 容器，作用是在 O(1) 时间内插入和查找键值对，类似于 JDK 里的 HashMap。unordered_map 的实现在 <bits/unordered_map.h> 中。unordered_map 的类图（不准确，画个大概）如下：
+![1561642558300](https://jimmie00x0000.github.io/img/annotated-stl/unordered_map.png)
+
+
+unordered_map 有一个 _Hashtable 类型的成员 \_M\_h，这个成员，顾名思义，就是一个哈希表，是插入、查找、删除操作的真正执行者。
+
+
+// 插入操作的分析，待续。。。
+
+关于 hashtable 的扩容：
+
+* 触发条件：一旦插入的元素总数超过（当前桶的总数 \* 最大负载因子），就执行扩容。
+* 扩容大小：一般增长两倍，取最近的一个素数
+
+// 待续。。。
+
+
+
 
 
 
