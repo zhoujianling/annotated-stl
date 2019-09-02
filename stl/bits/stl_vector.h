@@ -1203,10 +1203,13 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       }
 
 #if __cplusplus >= 201103L
+      // 右值引用，重载 push_back()，
+      // emplace_back() 支持参数绑定到左值引用或右值引用
       void
       push_back(value_type&& __x)
       { emplace_back(std::move(__x)); }
 
+      // 实现见 vector.tcc
       template<typename... _Args>
 #if __cplusplus > 201402L
 	reference

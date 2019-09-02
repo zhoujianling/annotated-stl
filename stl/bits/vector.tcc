@@ -106,9 +106,11 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 #else
       void
 #endif
+	  // _Args&& 所谓 universal reference, __args 实际可绑定到左值引用或右值引用
       vector<_Tp, _Alloc>::
       emplace_back(_Args&&... __args)
       {
+      // 如果空间足够
 	if (this->_M_impl._M_finish != this->_M_impl._M_end_of_storage)
 	  {
 	    _GLIBCXX_ASAN_ANNOTATE_GROW(1);
@@ -118,6 +120,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	    _GLIBCXX_ASAN_ANNOTATE_GREW(1);
 	  }
 	else
+	  // 空间扩容，重新插入
 	  _M_realloc_insert(end(), std::forward<_Args>(__args)...);
 #if __cplusplus > 201402L
 	return back();
