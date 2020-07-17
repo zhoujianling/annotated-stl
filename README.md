@@ -48,7 +48,7 @@ STL 来自 9.1.0 版 gcc 里面的 libstdc++。
 
 所以一个 Allocator 的定义一般如下：
 
-![1561641296219](https://jimmie00x0000.github.io/img/annotated-stl/1.png)
+![1561641296219](https://zhoujianling.github.io/img/annotated-stl/1.png)
 
 其中，allocate() 负责分配空间，construct() 负责调用对象的构造函数，destroy() 负责调用对象的析构函数，deallocate() 负责释放已分配的空间。
 
@@ -66,7 +66,7 @@ STL 来自 9.1.0 版 gcc 里面的 libstdc++。
 
 模板参数 _Alloc 就是 Allocator 的类型，其默认类型为定义在 <bits/allocator.h> 里的 allocator<T>。然而如果去看 allocator 的定义，发现其具体实现要追溯到其基类。
 
-![1561642558300](https://jimmie00x0000.github.io/img/annotated-stl/2.png)
+![1561642558300](https://zhoujianling.github.io/img/annotated-stl/2.png)
 
 
 
@@ -103,7 +103,7 @@ new_allocator 使用 ::operator new 来分配空间，其底层就是最常用�
 ### pool_allocator
 
 pool_allocator 定义在 <ext/pool_allocator.h> 里，实际类名为 \_\_pool_alloc， 其继承于  __pool_alloc_base 。
-![A-3](https://jimmie00x0000.github.io/img/annotated-stl/3.png)
+![A-3](https://zhoujianling.github.io/img/annotated-stl/3.png)
 
 pool_allocator 采用如下机制分配内存：
 
@@ -225,7 +225,7 @@ basic_string 有 3 个成员变量，_M_dataplus 是一个保存数据指针 _M_
 
 
 
-![string 类图](https://jimmie00x0000.github.io/img/annotated-stl/string.png)
+![string 类图](https://zhoujianling.github.io/img/annotated-stl/string.png)
 
 basic_string 的数据存储方式要分两种情况讨论：
 
@@ -305,11 +305,11 @@ basic_string 的拷贝复制会简单地执行深拷贝，而非采用写时复�
 
 在 x86-64 架构下，如果我们在代码中计算 sizeof(任意vector)，我们会发生计算出来的大小为 24。原因很简单，数组是在堆中分配的，vector对象本身只维护三个指针（见下图的 \_Vector_impl_data 的三个成员变量），分别指向已分配空间开始位置、当前元素放到哪儿了、已分配空间的结束位置。
 
-![1561641296219](https://jimmie00x0000.github.io/img/annotated-stl/5.png)
+![1561641296219](https://zhoujianling.github.io/img/annotated-stl/5.png)
 
 vector 的实际的实现在 <bits/stl_vector.h> 中，其继承于 _Vector_base, 类图如下：
 
-![1561641296219](https://jimmie00x0000.github.io/img/annotated-stl/4.png)
+![1561641296219](https://zhoujianling.github.io/img/annotated-stl/4.png)
 
 调用 push_back 向 vector 添加元素，如果 _M_finish 指针小于 _M_end_of_storage ，则可以继续愉快地插入数据，否则调用 _M_relloc_insert 实现扩容并插入：
 
@@ -420,14 +420,14 @@ vector 的实际的实现在 <bits/stl_vector.h> 中，其继承于 _Vector_base
 
 双端队列 deque 相比于 vector，可以实现在常数时间内向头部插入数据（push_front）。因为连续数组的头部插入效率是 O(n)，此时再使用内存上的连续数组便无法满足这样的需求。deque 使用**分段连续空间**来存储数据，其数据结构类似开散列的哈希表，如下图所示：
 
-![1561642558300](https://jimmie00x0000.github.io/img/annotated-stl/deque_structure.png)
+![1561642558300](https://zhoujianling.github.io/img/annotated-stl/deque_structure.png)
 
 简单来说，deque 的数据分段存储在多个子数组上，通过对数据分段，每次向头部插入数据的时候，只需要移动 \_M_cur 指针然后插入数据即可。即使队首所在的数组可用空间不够，也可以通过新申请一个子数组来实现。
 
 
 
 在 x86-64架构下，如果我们计算 sizeof(deque>，会得到80字节的大小。原因见下面的类图，因为 _Deque_iterator 包含4个指针，大小为 4 * 8 = 32，一个 _Deque_impl 包含两个这样的迭代器，一个 size_t 类型的成员，和一个  _Tp ** 类型的指针，故大小为 32 * 2 + 8 + 8 = 80。类图如下：
-![1561642558300](https://jimmie00x0000.github.io/img/annotated-stl/6.png)
+![1561642558300](https://zhoujianling.github.io/img/annotated-stl/6.png)
 
 
 
@@ -435,7 +435,7 @@ vector 的实际的实现在 <bits/stl_vector.h> 中，其继承于 _Vector_base
 ### unordered_map
 
 unordered_map 也是常用的 STL 容器，作用是在 O(1) 时间内插入和查找键值对，类似于 JDK 里的 HashMap。unordered_map 的实现在 <bits/unordered_map.h> 中。unordered_map 的类图（不准确，画个大概）如下：
-![1561642558300](https://jimmie00x0000.github.io/img/annotated-stl/unordered_map.png)
+![1561642558300](https://zhoujianling.github.io/img/annotated-stl/unordered_map.png)
 
 
 unordered_map 有一个 _Hashtable 类型的成员 \_M\_h，这个成员，顾名思义，就是一个哈希表，是插入、查找、删除操作的真正执行者。
